@@ -83,9 +83,17 @@ namespace FootballGame.Authentication
             bool p1done = false, p2done = false;
             bool p1ok = false, p2ok = false;
 
-            GameManager.Instance.DataManager.SavePlayerDataDirect(player, ok => { p1ok = ok; p1done = true; });
-            yield return GameManager.Instance.DataManager.SaveTeamData(team, ok => { p2ok = ok; p2done = true; });
-            yield return new WaitUntil(() => p1done && p2done);
+            var dm = GameManager.Instance.DataManager;
+            dm.SavePlayerDataDirect(player, ok => { p1ok = ok; p1done = true; });
+            dm.SaveTeamDataDirect(team,     ok => { p2ok = ok; p2done = true; });
+
+            float elapsed = 0f;
+            const float timeout = 15f;
+            yield return new WaitUntil(() =>
+            {
+                elapsed += UnityEngine.Time.unscaledDeltaTime;
+                return (p1done && p2done) || elapsed >= timeout;
+            });
 
             if (p1ok && p2ok)
             {
@@ -96,7 +104,8 @@ namespace FootballGame.Authentication
             }
             else
             {
-                callback?.Invoke(false, "Failed to save data. Please try again.");
+                string reason = elapsed >= timeout ? "Network timeout. Please try again." : "Failed to save data. Please try again.";
+                callback?.Invoke(false, reason);
             }
         }
 

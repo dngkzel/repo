@@ -114,7 +114,7 @@ namespace FootballGame.Economy
                     ? Mathf.RoundToInt(MarketRefreshCost * PremiumSystem.Instance.GetMarketRefreshDiscount())
                     : MarketRefreshCost;
 
-                if (!TokenSystem.Instance?.SpendTokens(cost, "Market Refresh") ?? true)
+                if (!(TokenSystem.Instance?.SpendTokens(cost, "Market Refresh") ?? false))
                 {
                     OnPurchaseFailed?.Invoke($"Need {cost} tokens to refresh.");
                     return;
@@ -129,16 +129,18 @@ namespace FootballGame.Economy
         {
             if (mp == null || mp.player == null) return;
             if (mp.IsExpired) { OnPurchaseFailed?.Invoke("Listing expired."); return; }
-            if (!_market.Contains(mp)) { OnPurchaseFailed?.Invoke("No longer available."); return; }
 
-            if (!TokenSystem.Instance?.SpendTokens(mp.price, $"Bought {mp.player.Name}") ?? true)
+            if (!(TokenSystem.Instance?.SpendTokens(mp.price, $"Bought {mp.player.Name}") ?? false))
             {
                 OnPurchaseFailed?.Invoke($"Need {mp.price} tokens.");
                 return;
             }
 
             mp.player.OwnerId = _userId;
-            _market.Remove(mp);
+            // Use ID-based lookup to avoid reference-equality failures after Firebase reload
+            var existing = _market.Find(m => m.player?.PlayerId == mp.player?.PlayerId);
+            if (existing == null) { OnPurchaseFailed?.Invoke("No longer available."); return; }
+            _market.Remove(existing);
 
             if (!string.IsNullOrEmpty(_userId))
             {

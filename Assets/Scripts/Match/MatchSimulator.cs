@@ -19,6 +19,11 @@ namespace FootballGame.Match
             Instance = this;
         }
 
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
         public void StartSimulation(MatchController ctrl)
         {
             _controller = ctrl;
@@ -141,8 +146,9 @@ namespace FootballGame.Match
         {
             var taker = team?.OnFieldPlayers?.Where(p => p.IsOnField && !p.RedCard)
                 .OrderByDescending(p => p.Shooting).FirstOrDefault();
+            if (taker == null) return; // no eligible player — skip penalty
             bool scored = Random.value < 0.75f;
-            if (scored && taker != null)
+            if (scored)
             {
                 taker.MatchGoals++;
                 if (isHome) state.HomeScore++; else state.AwayScore++;

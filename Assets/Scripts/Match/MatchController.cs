@@ -27,6 +27,11 @@ namespace FootballGame.Match
             Instance = this;
         }
 
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
         public void InitMatch(MatchTeamData home, MatchTeamData away)
         {
             home.IsHomeTeam = true;

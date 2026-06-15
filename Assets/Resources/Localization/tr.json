@@ -70,5 +70,7 @@
   "forgot_password": "Şifremi Unuttum?",
   "send_reset": "Sıfırlama E-postası Gönder",
   "no_account": "Hesabın yok mu?",
-  "have_account": "Zaten hesabın var mı?"
+  "have_account": "Zaten hesabın var mı?",
+  "days_remaining": "gün kaldı",
+  "hours_remaining": "saat kaldı"
 }

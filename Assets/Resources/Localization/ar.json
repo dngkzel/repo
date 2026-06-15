@@ -70,5 +70,7 @@
   "forgot_password": "نسيت كلمة المرور؟",
   "send_reset": "إرسال بريد إعادة التعيين",
   "no_account": "ليس لديك حساب؟",
-  "have_account": "لديك حساب بالفعل؟"
+  "have_account": "لديك حساب بالفعل؟",
+  "days_remaining": "أيام متبقية",
+  "hours_remaining": "ساعات متبقية"
 }

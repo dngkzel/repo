@@ -70,5 +70,7 @@
   "forgot_password": "Mot de passe oublié ?",
   "send_reset": "Envoyer l'e-mail de réinitialisation",
   "no_account": "Pas de compte ?",
-  "have_account": "Déjà un compte ?"
+  "have_account": "Déjà un compte ?",
+  "days_remaining": "jours restants",
+  "hours_remaining": "heures restantes"
 }

@@ -26,6 +26,9 @@ namespace FootballGame.UI
         [Header("Daily Reward Notification")]
         public GameObject dailyRewardDot;
 
+        // Cached to avoid going through GameManager.Instance getter during teardown
+        private Economy.TokenSystem _tokenSystem;
+
         private void OnEnable()
         {
             RefreshUI();
@@ -41,16 +44,19 @@ namespace FootballGame.UI
             btnDailyReward?.onClick.AddListener(OnDailyReward);
             btnLogout?.onClick.AddListener(OnLogout);
 
-            if (GameManager.Instance?.TokenSystem != null)
-                GameManager.Instance.TokenSystem.OnTokenBalanceChanged += OnBalanceChanged;
+            _tokenSystem = GameManager.Instance?.TokenSystem;
+            if (_tokenSystem != null)
+                _tokenSystem.OnTokenBalanceChanged += OnBalanceChanged;
 
             AudioManager.Instance?.PlayMusic(MusicTrack.Menu);
         }
 
         private void OnDestroy()
         {
-            if (GameManager.Instance?.TokenSystem != null)
-                GameManager.Instance.TokenSystem.OnTokenBalanceChanged -= OnBalanceChanged;
+            // Use cached reference — never go through Instance getter in OnDestroy,
+            // the getter creates a new GameObject if instance is null during teardown.
+            if (_tokenSystem != null)
+                _tokenSystem.OnTokenBalanceChanged -= OnBalanceChanged;
         }
 
         private void RefreshUI()

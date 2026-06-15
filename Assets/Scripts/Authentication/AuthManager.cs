@@ -29,6 +29,16 @@ namespace FootballGame.Authentication
 
         private void Start()
         {
+            // Wait for GameManager to confirm Firebase is ready before accessing DefaultInstance
+            if (Core.GameManager.Instance != null && Core.GameManager.Instance.IsFirebaseReady)
+                InitFirebase();
+            else
+                Core.GameManager.OnGameInitialized += InitFirebase;
+        }
+
+        private void InitFirebase()
+        {
+            Core.GameManager.OnGameInitialized -= InitFirebase;
             _auth = FirebaseAuth.DefaultInstance;
             _googleConfig = new GoogleSignInConfiguration
             {

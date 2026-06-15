@@ -70,5 +70,7 @@
   "forgot_password": "ลืมรหัสผ่าน?",
   "send_reset": "ส่งอีเมลรีเซ็ต",
   "no_account": "ไม่มีบัญชี?",
-  "have_account": "มีบัญชีอยู่แล้ว?"
+  "have_account": "มีบัญชีอยู่แล้ว?",
+  "days_remaining": "วันที่เหลือ",
+  "hours_remaining": "ชั่วโมงที่เหลือ"
 }

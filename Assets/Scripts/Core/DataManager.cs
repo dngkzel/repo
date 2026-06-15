@@ -90,6 +90,13 @@ namespace FootballGame.Core
             callback?.Invoke(success);
         }
 
+        public void SaveTeamDataDirect(Player.TeamData team, Action<bool> callback = null)
+        {
+            if (team == null || string.IsNullOrEmpty(team.TeamId)) { callback?.Invoke(false); return; }
+            _db.Child(TEAMS_PATH).Child(team.TeamId).SetRawJsonValueAsync(JsonConvert.SerializeObject(team))
+                .ContinueWithOnMainThread(t => callback?.Invoke(t.IsCompleted && !t.IsFaulted));
+        }
+
         public void UpdateRankingEntry(string userId, Ranking.RankEntry entry)
         {
             string json = JsonConvert.SerializeObject(entry);

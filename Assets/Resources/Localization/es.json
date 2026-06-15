@@ -70,5 +70,7 @@
   "forgot_password": "¿Olvidaste tu contraseña?",
   "send_reset": "Enviar correo de restablecimiento",
   "no_account": "¿No tienes cuenta?",
-  "have_account": "¿Ya tienes cuenta?"
+  "have_account": "¿Ya tienes cuenta?",
+  "days_remaining": "días restantes",
+  "hours_remaining": "horas restantes"
 }

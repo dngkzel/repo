@@ -1,10 +1,8 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Firebase;
 using Firebase.Auth;
-using Firebase.Database;
 using Firebase.Extensions;
 
 namespace FootballGame.Core
@@ -18,14 +16,7 @@ namespace FootballGame.Core
             get
             {
                 if (_instance == null)
-                {
                     _instance = FindObjectOfType<GameManager>();
-                    if (_instance == null)
-                    {
-                        GameObject go = new GameObject("GameManager");
-                        _instance = go.AddComponent<GameManager>();
-                    }
-                }
                 return _instance;
             }
         }
@@ -59,6 +50,7 @@ namespace FootballGame.Core
         public Economy.TokenSystem TokenSystem;
         public Economy.DailyRewardSystem DailyRewardSystem;
         public Ranking.RankingSystem RankingSystem;
+        public Player.TransferSystem TransferSystem;
         #endregion
 
         public Player.PlayerData CurrentPlayer { get; private set; }
@@ -81,12 +73,13 @@ namespace FootballGame.Core
 
         private void InitializeSystems()
         {
-            if (DataManager == null) DataManager = GetOrAddComponent<DataManager>();
+            if (DataManager == null)        DataManager        = GetOrAddComponent<DataManager>();
             if (LocalizationManager == null) LocalizationManager = GetOrAddComponent<LocalizationManager>();
-            if (AudioManager == null) AudioManager = GetOrAddComponent<Audio.AudioManager>();
-            if (TokenSystem == null) TokenSystem = GetOrAddComponent<Economy.TokenSystem>();
-            if (DailyRewardSystem == null) DailyRewardSystem = GetOrAddComponent<Economy.DailyRewardSystem>();
-            if (RankingSystem == null) RankingSystem = GetOrAddComponent<Ranking.RankingSystem>();
+            if (AudioManager == null)       AudioManager       = GetOrAddComponent<Audio.AudioManager>();
+            if (TokenSystem == null)        TokenSystem        = GetOrAddComponent<Economy.TokenSystem>();
+            if (DailyRewardSystem == null)  DailyRewardSystem  = GetOrAddComponent<Economy.DailyRewardSystem>();
+            if (RankingSystem == null)      RankingSystem      = GetOrAddComponent<Ranking.RankingSystem>();
+            if (TransferSystem == null)     TransferSystem     = GetOrAddComponent<Player.TransferSystem>();
         }
 
         private T GetOrAddComponent<T>() where T : Component
@@ -122,11 +115,20 @@ namespace FootballGame.Core
             else SetState(GameState.Login);
         }
 
-        private void OnAuthStateChanged(object sender, EventArgs e)
+        private void OnAuthStateChanged(object sender, System.EventArgs e)
         {
             var user = FirebaseAuth.DefaultInstance.CurrentUser;
-            if (user != null) StartCoroutine(LoadPlayerData(user.UserId));
-            else { CurrentPlayer = null; CurrentTeam = null; SetState(GameState.Login); }
+            if (user != null)
+                StartCoroutine(LoadPlayerData(user.UserId));
+            else
+            {
+                // Unsubscribe from previous user's token updates
+                UnregisterTokenListener();
+                CurrentPlayer = null;
+                CurrentTeam = null;
+                TokenSystem?.ResetForLogout();
+                SetState(GameState.Login);
+            }
         }
 
         private IEnumerator LoadPlayerData(string userId)
@@ -139,8 +141,10 @@ namespace FootballGame.Core
             {
                 yield return StartCoroutine(DataManager.LoadTeamData(CurrentPlayer.TeamId, t => CurrentTeam = t));
 
-                TokenSystem?.Initialize(userId);
-                if (TokenSystem != null && !_tokenListenerRegistered)
+                // Initialize TokenSystem with the already-loaded balance as starting value
+                // to avoid a race where AddTokens fires before the Firebase load completes
+                TokenSystem?.Initialize(userId, CurrentPlayer.TokenBalance);
+                if (!_tokenListenerRegistered && TokenSystem != null)
                 {
                     TokenSystem.OnBalanceChanged += OnTokenBalanceChanged;
                     _tokenListenerRegistered = true;
@@ -150,7 +154,7 @@ namespace FootballGame.Core
 
                 CurrentTokenBalance = CurrentPlayer.TokenBalance;
                 IsPremium = CurrentPlayer.IsPremium;
-                DailyRewardSystem.CheckDailyReward(CurrentPlayer);
+                DailyRewardSystem?.CheckDailyReward(CurrentPlayer);
                 SetState(GameState.MainMenu);
             }
         }
@@ -159,6 +163,15 @@ namespace FootballGame.Core
         {
             CurrentTokenBalance = newBalance;
             if (CurrentPlayer != null) CurrentPlayer.TokenBalance = newBalance;
+        }
+
+        private void UnregisterTokenListener()
+        {
+            if (_tokenListenerRegistered && TokenSystem != null)
+            {
+                TokenSystem.OnBalanceChanged -= OnTokenBalanceChanged;
+                _tokenListenerRegistered = false;
+            }
         }
 
         public void SetCurrentPlayer(Player.PlayerData player)
@@ -176,30 +189,34 @@ namespace FootballGame.Core
             if (CurrentPlayer != null)
             {
                 CurrentPlayer.TokenBalance = newBalance;
-                DataManager.SavePlayerTokenBalance(CurrentPlayer.UserId, newBalance);
+                DataManager?.SavePlayerTokenBalance(CurrentPlayer.UserId, newBalance);
             }
         }
 
-        public void AddTokens(int amount) => UpdateTokenBalance(CurrentTokenBalance + amount);
+        public void AddTokens(int amount) => TokenSystem?.AddTokens(amount, "Manual add");
 
-        public bool SpendTokens(int amount)
-        {
-            if (CurrentTokenBalance < amount) return false;
-            UpdateTokenBalance(CurrentTokenBalance - amount);
-            return true;
-        }
+        public bool SpendTokens(int amount) => TokenSystem?.SpendTokens(amount, "Manual spend") ?? false;
 
         public void SaveTeamData(string teamName, string country, string city, string color, int badgeIndex)
         {
             if (CurrentPlayer == null) return;
             CurrentPlayer.Country = country;
             CurrentPlayer.City = city;
-            if (CurrentTeam == null) CurrentTeam = new Player.TeamData();
+            if (CurrentTeam == null)
+            {
+                CurrentTeam = new Player.TeamData
+                {
+                    TeamId = CurrentPlayer.TeamId,
+                    OwnerId = CurrentPlayer.UserId,
+                };
+            }
             CurrentTeam.TeamName = teamName;
             CurrentTeam.Country = country;
             CurrentTeam.City = city;
             CurrentTeam.KitPrimaryColor = color;
+            // Persist both PlayerData (country/city) and TeamData (name/kit)
             DataManager?.SavePlayerDataDirect(CurrentPlayer);
+            DataManager?.SaveTeamDataDirect(CurrentTeam);
         }
 
         public void UpdateTeamName(string teamName)
@@ -207,7 +224,7 @@ namespace FootballGame.Core
             if (CurrentTeam != null)
             {
                 CurrentTeam.TeamName = teamName;
-                DataManager?.SavePlayerDataDirect(CurrentPlayer);
+                DataManager?.SaveTeamDataDirect(CurrentTeam);
             }
         }
 
@@ -227,7 +244,9 @@ namespace FootballGame.Core
 
         private void OnDestroy()
         {
-            if (FirebaseAuth.DefaultInstance != null)
+            if (_instance == this) _instance = null;
+            UnregisterTokenListener();
+            if (IsFirebaseReady && FirebaseAuth.DefaultInstance != null)
                 FirebaseAuth.DefaultInstance.StateChanged -= OnAuthStateChanged;
         }
     }
