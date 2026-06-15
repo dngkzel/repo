@@ -54,22 +54,21 @@ namespace FootballGame.UI
             _ctrl = MatchController.Instance;
             if (_ctrl == null) return;
 
+            _ctrl.OnMatchStarted    += OnMatchReady;
             _ctrl.OnGoalScored      += OnGoal;
             _ctrl.OnMatchEventFired += OnEvent;
             _ctrl.OnMinuteUpdated   += OnMinute;
             _ctrl.OnHalftime        += OnHalftime;
             _ctrl.OnFullTime        += OnFullTime;
 
-            var state = _ctrl.State;
-            if (txtHomeTeam) txtHomeTeam.text = state.HomeTeam?.TeamName ?? "";
-            if (txtAwayTeam) txtAwayTeam.text = state.AwayTeam?.TeamName ?? "";
-            UpdateScore();
+            // If match was already initialized before this Start ran
+            if (_ctrl.State != null) RefreshTeamLabels();
 
             btnPause?.onClick.AddListener(TogglePause);
             btnSpeed1?.onClick.AddListener(() => SetSpeed(1f));
             btnSpeed2?.onClick.AddListener(() => SetSpeed(2f));
             btnSpeed4?.onClick.AddListener(() => SetSpeed(4f));
-            btnOpenSubs?.onClick.AddListener(() => OpenSubPanel());
+            btnOpenSubs?.onClick.AddListener(OpenSubPanel);
             btnCloseSubs?.onClick.AddListener(() => substitutionPanel?.SetActive(false));
             btnBackToMenu?.onClick.AddListener(BackToMenu);
 
@@ -77,17 +76,31 @@ namespace FootballGame.UI
             substitutionPanel?.SetActive(false);
 
             AudioManager.Instance?.PlayMusic(MusicTrack.Match);
-            AudioManager.Instance?.PlaySFX(SFX.MatchKickoff);
         }
 
         private void OnDestroy()
         {
             if (_ctrl == null) return;
+            _ctrl.OnMatchStarted    -= OnMatchReady;
             _ctrl.OnGoalScored      -= OnGoal;
             _ctrl.OnMatchEventFired -= OnEvent;
             _ctrl.OnMinuteUpdated   -= OnMinute;
             _ctrl.OnHalftime        -= OnHalftime;
             _ctrl.OnFullTime        -= OnFullTime;
+        }
+
+        private void OnMatchReady()
+        {
+            RefreshTeamLabels();
+            UpdateScore();
+            AudioManager.Instance?.PlaySFX(SFX.MatchKickoff);
+        }
+
+        private void RefreshTeamLabels()
+        {
+            var state = _ctrl?.State;
+            if (txtHomeTeam) txtHomeTeam.text = state?.HomeTeam?.TeamName ?? "Home";
+            if (txtAwayTeam) txtAwayTeam.text = state?.AwayTeam?.TeamName ?? "Away";
         }
 
         private void OnGoal(LiveMatchEvent evt)
@@ -104,14 +117,14 @@ namespace FootballGame.UI
             SFX? sfx = null;
             switch (evt.Type)
             {
-                case LiveEventType.YellowCard:   col = new Color(1f, 0.9f, 0f); sfx = SFX.YellowCard; break;
+                case LiveEventType.YellowCard:   col = new Color(1f, 0.9f, 0f);  sfx = SFX.YellowCard;  break;
                 case LiveEventType.RedCard:
-                case LiveEventType.SecondYellow: col = new Color(1f, 0.2f, 0.2f); sfx = SFX.RedCard;  break;
-                case LiveEventType.HalfTime:     col = new Color(0.6f, 1f, 1f); sfx = SFX.HalfTime;   break;
-                case LiveEventType.FullTime:     col = new Color(0.6f, 1f, 1f); sfx = SFX.FullTime;    break;
-                case LiveEventType.Penalty:      sfx = SFX.Penalty; break;
-                case LiveEventType.Corner:       sfx = SFX.Corner;  break;
-                case LiveEventType.Foul:         sfx = SFX.Foul;    break;
+                case LiveEventType.SecondYellow: col = new Color(1f, 0.2f, 0.2f); sfx = SFX.RedCard;    break;
+                case LiveEventType.HalfTime:     col = new Color(0.6f, 1f, 1f);  sfx = SFX.HalfTime;   break;
+                case LiveEventType.FullTime:     col = new Color(0.6f, 1f, 1f);  sfx = SFX.FullTime;    break;
+                case LiveEventType.Penalty:      sfx = SFX.Penalty;   break;
+                case LiveEventType.Corner:       sfx = SFX.Corner;    break;
+                case LiveEventType.Foul:         sfx = SFX.Foul;      break;
                 case LiveEventType.Substitution: sfx = SFX.Substitution; break;
             }
             AddCommentary(evt.Commentary, col);
@@ -125,6 +138,7 @@ namespace FootballGame.UI
 
         private void OnHalftime()
         {
+            // Resume is needed so the simulator can continue after its 3-second internal wait
             _ctrl.ResumeMatch();
             AudioManager.Instance?.PlaySFX(SFX.Whistle);
         }
@@ -147,7 +161,6 @@ namespace FootballGame.UI
                 txtResultDescription.text = draw ? loc?.Get("result_draw") :
                                             win  ? loc?.Get("result_win")  : loc?.Get("result_loss");
             }
-
             AudioManager.Instance?.PlayMusic(win ? MusicTrack.Victory : MusicTrack.Defeat);
         }
 
@@ -157,9 +170,7 @@ namespace FootballGame.UI
             var go = Instantiate(commentaryItemPrefab, commentaryContainer);
             var tmp = go.GetComponentInChildren<TextMeshProUGUI>();
             if (tmp) { tmp.text = text; tmp.color = color; }
-
-            if (commentaryScroll)
-                Canvas.ForceUpdateCanvases();
+            if (commentaryScroll) Canvas.ForceUpdateCanvases();
         }
 
         private void UpdateScore()
@@ -206,7 +217,7 @@ namespace FootballGame.UI
             if (team == null) return;
 
             if (txtSubsRemaining)
-                txtSubsRemaining.text = $"{_ctrl?.GetSubsRemaining(isHome)}/{3} subs";
+                txtSubsRemaining.text = $"{_ctrl?.GetSubsRemaining(isHome)}/3 subs";
 
             foreach (var p in team.OnFieldPlayers ?? new List<MatchPlayerData>())
                 AddPlayerRow(onFieldContainer, p, true);
@@ -218,7 +229,7 @@ namespace FootballGame.UI
         private void AddPlayerRow(Transform container, MatchPlayerData p, bool isOnField)
         {
             if (playerRowPrefab == null) return;
-            var go = Instantiate(playerRowPrefab, container);
+            var go  = Instantiate(playerRowPrefab, container);
             var txts = go.GetComponentsInChildren<TextMeshProUGUI>();
             if (txts.Length > 0) txts[0].text = p.Name;
             if (txts.Length > 1) txts[1].text = p.Position;
@@ -259,6 +270,7 @@ namespace FootballGame.UI
         private void BackToMenu()
         {
             AudioManager.Instance?.PlaySFX(SFX.ButtonClick);
+            MatchSimulator.Instance?.StopSimulation();
             GameSceneManager.Instance?.LoadScene(SceneName.MainMenu);
         }
     }

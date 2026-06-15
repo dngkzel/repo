@@ -74,7 +74,7 @@ namespace FootballGame.UI
                     sliderSecondaryB?.value ?? 1f);
         }
 
-        private async void OnConfirm()
+        private void OnConfirm()
         {
             if (txtError) txtError.text = "";
             string teamName = inputTeamName?.text?.Trim() ?? "";
@@ -93,7 +93,6 @@ namespace FootballGame.UI
                 return;
             }
 
-            btnConfirm.interactable = false;
             AudioManager.Instance?.PlaySFX(SFX.ButtonClick);
 
             var gm = GameManager.Instance;
@@ -105,8 +104,7 @@ namespace FootballGame.UI
                     pd.Country = country;
                     pd.City    = city;
                 }
-                await System.Threading.Tasks.Task.Run(() => { }); // yield frame
-                gm.UpdateTeamName(teamName);
+                gm.SaveTeamData(teamName, country, city, "#FF0000", 0);
             }
 
             GameSceneManager.Instance?.LoadScene(SceneName.MainMenu);

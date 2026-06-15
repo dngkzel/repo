@@ -16,6 +16,7 @@ namespace FootballGame.Match
         public event Action<int> OnMinuteUpdated;
         public event Action OnHalftime;
         public event Action OnFullTime;
+        public event Action OnMatchStarted;
 
         private int _homeSubs, _awaySubs;
         private const int MAX_SUBS = 3;
@@ -32,6 +33,7 @@ namespace FootballGame.Match
             away.IsHomeTeam = false;
             State = new LiveMatchState { HomeTeam = home, AwayTeam = away };
             _homeSubs = _awaySubs = 0;
+            OnMatchStarted?.Invoke();
             MatchSimulator.Instance?.StartSimulation(this);
         }
 

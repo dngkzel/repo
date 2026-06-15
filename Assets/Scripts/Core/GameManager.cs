@@ -67,6 +67,8 @@ namespace FootballGame.Core
         public int CurrentTokenBalance { get; private set; }
         public bool IsPremium { get; private set; }
 
+        private bool _tokenListenerRegistered;
+
         private void Awake()
         {
             if (_instance != null && _instance != this) { Destroy(gameObject); return; }
@@ -136,11 +138,27 @@ namespace FootballGame.Core
             else
             {
                 yield return StartCoroutine(DataManager.LoadTeamData(CurrentPlayer.TeamId, t => CurrentTeam = t));
+
+                TokenSystem?.Initialize(userId);
+                if (TokenSystem != null && !_tokenListenerRegistered)
+                {
+                    TokenSystem.OnBalanceChanged += OnTokenBalanceChanged;
+                    _tokenListenerRegistered = true;
+                }
+
+                Economy.PremiumSystem.Instance?.LoadPremiumStatus(userId);
+
                 CurrentTokenBalance = CurrentPlayer.TokenBalance;
                 IsPremium = CurrentPlayer.IsPremium;
                 DailyRewardSystem.CheckDailyReward(CurrentPlayer);
                 SetState(GameState.MainMenu);
             }
+        }
+
+        private void OnTokenBalanceChanged(int newBalance)
+        {
+            CurrentTokenBalance = newBalance;
+            if (CurrentPlayer != null) CurrentPlayer.TokenBalance = newBalance;
         }
 
         public void SetCurrentPlayer(Player.PlayerData player)

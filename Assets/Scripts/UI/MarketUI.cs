@@ -131,8 +131,8 @@ namespace FootballGame.UI
             var txts = go.GetComponentsInChildren<TextMeshProUGUI>();
             if (txts.Length > 0) txts[0].text = mp.player?.Name ?? "";
             if (txts.Length > 1) txts[1].text = $"{mp.player?.Position} | OVR {mp.player?.Overall}";
-            if (txts.Length > 2) txts[2].text = $"PAC {mp.player?.Pace}  SHO {mp.player?.Shooting}  PAS {mp.player?.Passing}";
-            if (txts.Length > 3) txts[3].text = $"DRI {mp.player?.Dribbling}  DEF {mp.player?.Defense}  PHY {mp.player?.Physical}";
+            if (txts.Length > 2) txts[2].text = $"PAC {mp.player?.Speed}  SHO {mp.player?.Shooting}  PAS {mp.player?.Passing}";
+            if (txts.Length > 3) txts[3].text = $"DRI {mp.player?.Dribbling}  DEF {mp.player?.Defending}  PHY {mp.player?.Physical}";
             if (txts.Length > 4) txts[4].text = $"{mp.price} T";
 
             var btn = go.GetComponentInChildren<Button>();
@@ -147,8 +147,8 @@ namespace FootballGame.UI
             if (txtConfirmStats)
                 txtConfirmStats.text =
                     $"{mp.player?.Position} | OVR {mp.player?.Overall}\n" +
-                    $"PAC {mp.player?.Pace}  SHO {mp.player?.Shooting}  PAS {mp.player?.Passing}\n" +
-                    $"DRI {mp.player?.Dribbling}  DEF {mp.player?.Defense}  PHY {mp.player?.Physical}";
+                    $"PAC {mp.player?.Speed}  SHO {mp.player?.Shooting}  PAS {mp.player?.Passing}\n" +
+                    $"DRI {mp.player?.Dribbling}  DEF {mp.player?.Defending}  PHY {mp.player?.Physical}";
             if (txtConfirmPrice) txtConfirmPrice.text = $"{mp.price} Tokens";
             AudioManager.Instance?.PlaySFX(SFX.ButtonClick);
         }

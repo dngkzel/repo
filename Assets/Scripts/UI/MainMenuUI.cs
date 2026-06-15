@@ -62,7 +62,7 @@ namespace FootballGame.UI
             if (pd != null)
             {
                 if (txtDisplayName) txtDisplayName.text = pd.DisplayName;
-                if (txtTeamName)    txtTeamName.text    = pd.TeamId;
+                if (txtTeamName)    txtTeamName.text    = gm.CurrentTeam?.TeamName ?? pd.TeamId;
                 if (imgPremiumBadge) imgPremiumBadge.gameObject.SetActive(gm.IsPremium);
             }
 
@@ -80,10 +80,10 @@ namespace FootballGame.UI
         private void CheckDailyReward()
         {
             if (dailyRewardDot == null) return;
-            var pd = GameManager.Instance?.CurrentUserData;
-            bool canClaim = Economy.DailyRewardSystem.Instance != null && pd != null &&
-                            Economy.DailyRewardSystem.Instance.CheckDailyReward(pd).CanClaim;
-            dailyRewardDot.SetActive(canClaim);
+            var pd  = GameManager.Instance?.CurrentUserData;
+            var sys = Economy.DailyRewardSystem.Instance;
+            if (sys != null && pd != null) sys.CheckDailyReward(pd);
+            dailyRewardDot.SetActive(sys?.CanClaimToday ?? false);
         }
 
         private void OnPlay()

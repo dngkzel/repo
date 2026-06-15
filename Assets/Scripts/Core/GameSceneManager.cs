@@ -5,9 +5,10 @@ using UnityEngine.SceneManagement;
 
 namespace FootballGame.Core
 {
+    public enum SceneName { Loading, Authentication, Registration, MainMenu, Match, Market, Rankings, Settings, DailyReward }
+
     public class GameSceneManager : MonoBehaviour
     {
-        public enum SceneName { Loading, Authentication, Registration, MainMenu, Match, Market, Rankings, Settings, DailyReward }
 
         public static event Action<SceneName> OnSceneLoadStarted;
         public static event Action<float> OnSceneLoadProgress;
