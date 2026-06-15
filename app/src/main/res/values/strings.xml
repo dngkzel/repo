@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Otonom Video Fabrikası</string>
+    <string name="settings_title">Sistem Yapılandırması</string>
+    <string name="model_version_label">Model Versiyonu</string>
+    <string name="api_key_label">API Anahtarı</string>
+    <string name="update_system">Sistemi Güncelle</string>
+    <string name="home_title">Video Fabrikası</string>
+    <string name="start_pipeline">Üretimi Başlat</string>
+    <string name="topic_hint">Video konusunu girin…</string>
+    <string name="status_idle">Hazır</string>
+    <string name="status_script">Senaryo üretiliyor…</string>
+    <string name="status_media">Ses ve görseller üretiliyor…</string>
+    <string name="status_render">Bulut render başlatıldı…</string>
+    <string name="status_publish">Sosyal medyaya yayınlanıyor…</string>
+    <string name="status_done">Tamamlandı!</string>
+    <string name="status_error">Hata oluştu.</string>
+    <string name="nav_home">Ana Ekran</string>
+    <string name="nav_settings">Ayarlar</string>
+</resources>
