@@ -1,0 +1,24 @@
+## Android / Gradle
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+
+## Google Services (gizli tutulmalı)
+google-services.json
+
+## Firebase emulator
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+## Node.js (Cloud Functions)
+functions/node_modules/
+
+## macOS
+.DS_Store
