@@ -28,7 +28,7 @@ namespace FootballGame.Economy
         };
 
         public event Action<string> OnPurchaseSuccess;
-        public event Action<string> OnPurchaseFailed;
+        public event Action<string> OnPurchaseFailure;
 
         private IStoreController _store;
         private IExtensionProvider _extensions;
@@ -100,13 +100,13 @@ namespace FootballGame.Economy
         public void OnPurchaseFailed(Product product, PurchaseFailureDescription desc)
         {
             Debug.LogError($"Purchase failed: {product.definition.id} — {desc.reason}");
-            OnPurchaseFailed?.Invoke(product.definition.id);
+            OnPurchaseFailure?.Invoke(product.definition.id);
         }
 
         public void OnPurchaseFailed(Product product, PurchaseFailureReason reason)
         {
             Debug.LogError($"Purchase failed: {product.definition.id} — {reason}");
-            OnPurchaseFailed?.Invoke(product.definition.id);
+            OnPurchaseFailure?.Invoke(product.definition.id);
         }
     }
 }
